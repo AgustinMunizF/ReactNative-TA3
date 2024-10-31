@@ -1,70 +1,149 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  TextInput,
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+interface Movie {
+  Title: string;
+  Plot: string;
+  Poster: string;
+}
 
-export default function HomeScreen() {
+export default function App() {
+  const [movieTitle, setmovieTitle] = useState<string>("");
+  const [movie, setMovie] = useState<Movie | null>(null);
+  const [error, setError] = useState<string>("");
+
+  const fetchMovie = async () => {
+    setError("");
+    setMovie(null);
+
+    if (!movieTitle) {
+      setError("Ingrese el nombre de una película de nuestro catálogo.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://www.omdbapi.com/?t=${movieTitle}&apikey=d39fa7fc`
+      );
+      const data = await response.json();
+      if (data.Response === "True") {
+        setMovie({
+          Poster: data.Poster,
+          Title: data.Title,
+          Plot: data.Plot,
+        });
+      } else {
+        setError("Película no encontrada");
+      }
+    } catch (err) {
+      setError("Error en la conexión");
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Buscador de Películas</Text>
+        <TextInput
+          placeholder="Busca tu película"
+          value={movieTitle}
+          onChangeText={setmovieTitle}
+          style={styles.input}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <TouchableOpacity style={styles.button} onPress={fetchMovie}>
+          <Text style={styles.buttonText}>Buscar</Text>
+        </TouchableOpacity>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {movie && (
+          <View style={styles.movieContainer}>
+            <Image source={{ uri: movie.Poster }} style={styles.poster} />
+            <Text style={styles.movieTitle}>{movie.Title}</Text>
+            <Text style={styles.plot}>{movie.Plot}</Text>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "black",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  content: {
+    padding: 20,
+    alignItems: "center",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  title: {
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "white",
+    marginVertical: 30,
+  },
+  input: {
+    height: 45,
+    borderColor: "lightgray",
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 16,
+    paddingHorizontal: 10,
+    width: "100%",
+    backgroundColor: "white",
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: "red",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 16,
+    width: "100%",
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  error: {
+    color: "red",
+    marginTop: 8,
+    fontSize: 14,
+  },
+  movieContainer: {
+    marginTop: 20,
+    alignItems: "center",
+    backgroundColor: "lightgrey",
+    padding: 15,
+    borderRadius: 12,
+    elevation: 4,
+  },
+  poster: {
+    width: 325,
+    height: 500,
+    resizeMode: "cover",
+    borderRadius: 10,
+  },
+  movieTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginTop: 12,
+    color: "black",
+  },
+  plot: {
+    fontSize: 16,
+    marginTop: 8,
+    textAlign: "center",
+    color: "gray",
   },
 });
